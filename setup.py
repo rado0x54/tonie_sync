@@ -10,6 +10,6 @@ setup(name='tonie_sync',
       packages=['tonie_sync'],
       install_requires=[
           'tonie_api',
-          'spotdl'
+          'spotdl==2.2.2'
       ],
       zip_safe=False)

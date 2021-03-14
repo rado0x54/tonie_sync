@@ -3,6 +3,7 @@ version: "3.4"
 services:
     TonieboxSync:
         image: tonie-sync:0.1
+        build: .
         container_name: "TonieboxSync"
         restart: "no"
         volumes:
