@@ -10,8 +10,8 @@ RUN apt update && apt install -y \
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /tonie
+COPY . ./tonie_sync
 RUN git clone https://github.com/moritzj29/tonie_api
-RUN git clone https://github.com/moritzj29/tonie_sync
 RUN pip install ./tonie_api
 RUN pip install ./tonie_sync
 
