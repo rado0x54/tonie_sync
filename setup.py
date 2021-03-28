@@ -10,6 +10,6 @@ setup(name='tonie_sync',
       packages=['tonie_sync'],
       install_requires=[
           'tonie_api',
-          'spotify-dl'
+          'spotify-dl==7.5.0'
       ],
       zip_safe=False)

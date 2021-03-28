@@ -130,3 +130,5 @@ dmypy.json
 
 tonie_api/
 sync/
+
+.idea/
