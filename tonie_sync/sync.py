@@ -4,8 +4,10 @@ import json
 import threading
 from time import sleep
 from tonie_api import TonieAPI
-from spotdl.command_line.core import Spotdl
-from spotdl.helpers import SpotifyHelpers
+from spotipy import Spotify
+from spotipy.oauth2 import SpotifyClientCredentials
+from spotify_dl.spotify import fetch_tracks
+from spotify_dl.youtube import download_songs
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -57,8 +59,8 @@ class TonieSpotifySync():
         if client_secret is not None:
             sp_args['client_secret'] = client_secret
 
-        self.sp_handler = Spotdl(sp_args)
-        self.sp_helpers = SpotifyHelpers()
+        self.sp_client = Spotify(auth_manager=SpotifyClientCredentials(
+            client_id=sp_args['client_id'], client_secret=sp_args['client_secret']))
 
         self.tonieAPI = TonieAPI(tonie_user, tonie_password)
         self.tonieAPI.update()
@@ -203,8 +205,8 @@ class PlaylistSync():
     def __init__(self, parent, playlistURI, tonie):
         self.URI = playlistURI
         self.tonie = tonie
-        self.sp_handler = parent.sp_handler
-        self.sp_helpers = parent.sp_helpers
+        self.sp_client = parent.sp_client
+
         log.info(
             f'Setting up PlaylistSync for playlist {self.URI}'
             f' with creative tonie {self.tonie.id} ({self.tonie.name}).'
@@ -260,7 +262,7 @@ class PlaylistSync():
     def update_playlist(self):
         """Read tracks from the Spotify playlist.
         """
-        r = self.sp_helpers.fetch_playlist(self.URI)
+        r = self.sp_client.playlist(self.URI)
         self.PLname = r['name']
         # extract URIs
         self.tracks = {
@@ -296,9 +298,13 @@ class PlaylistSync():
                  ' new tracks to download.')
         for uri in newtracks:
             data = self.tracks[uri]
-            self.sp_handler.arguments["output_file"] = os.path.join(
-                self.directory, '{track-id}.{output-ext}')
-            self.sp_handler.download_track(f'spotify:track:{uri}')
+            songs = fetch_tracks(self.sp_client, 'track', data['external_urls']['spotify'])
+            download_songs(songs, self.directory, 'bestaudio/best', False)
+            # Filename convention for spotify_dl.youtube (this could break)
+            # --> f"{song.get('artist')} - {song.get('name')}.mp3"
+            # Rename file to {uri}.mp3 (that's how this script operates)
+            os.rename(os.path.join(self.directory, f"{songs[0].get('artist')} - {songs[0].get('name')}.mp3"),
+                      os.path.join(self.directory, f"{uri}.mp3"))
             log.info(f'Downloaded track {data["name"]} ({uri}).')
         log.info('Finished updating files ...')
 
